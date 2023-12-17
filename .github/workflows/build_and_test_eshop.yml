@@ -12,7 +12,7 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.SENESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
+          token: ${{ secrets.SEMESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4.0.0
@@ -38,7 +38,7 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.SENESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
+          token: ${{ secrets.SEMESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4.0.0
@@ -75,7 +75,7 @@ jobs:
       - name: Code checkout
         uses: actions/checkout@v4.1.1
         with:
-          token: ${{ secrets.SENESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
+          token: ${{ secrets.SEMESTRALKA_WORKFLOW_TOKEN }} # `GH_PAT` is a secret that contains your PAT
 
       - name: Setup NodeJS
         uses: actions/setup-node@v4.0.0
@@ -91,4 +91,3 @@ jobs:
       - name: Run tests
         run: |
           npm run test -- --colors          
-  
