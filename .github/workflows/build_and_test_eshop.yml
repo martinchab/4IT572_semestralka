@@ -111,3 +111,14 @@ jobs:
 
         - name: Install Boto3 & Boto
           run: sudo pip3 install boto3 boto 
+        
+        - name: Deploy with Ansible
+          env:
+            ACCESS_KEY: ${{ secrets.ACCESS_KEY }}
+            SECRET_KEY: ${{ secrets.SECRET_KEY }}
+            SESSION_TOKEN: ${{ secrets.SESSION_TOKEN }}
+          run: |
+            echo "${{secrets.SEMESTRALKA}}" > ansible.pem
+            chmod 400 ansible.pem
+            sudo ansible-playbook ansible/playbook.yml --user ec2-user --key-file ansible.pem -e "access_key=${ACCESS_KEY}" -e "secret_key=${SECRET_KEY}" -e "session_token=${SESSION_TOKEN}"
+            rm ansible.pem
