@@ -7,7 +7,7 @@
       ec2_instance:
         instance_type: t2.medium
         tags:
-          Name: "eShop_production"
+          Name: "Ansible"
           Created: "{{ ansible_date_time.epoch }}"
         image_id: ami-079db87dc4c10ac91
         region: us-east-1
@@ -22,3 +22,105 @@
         aws_secret_key: "{{ secret_key }}"
         security_token: "{{ session_token }}"
       register: ec2_instance_result
+
+    - name: Add EC2 Instance host to security_group
+      add_host:
+        hostname: "{{item.public_ip_address}}"
+        groupname: launched
+      loop: "{{ec2_instance_result.instances}}"
+
+    - name: Wait for SSH connection
+      delegate_to: "{{ item.public_ip_address }}"
+      wait_for_connection:
+        delay: 60
+        timeout: 360
+      loop: "{{ec2_instance_result.instances}}"
+    
+- name: Configure EC2 Instance
+  hosts: launched
+  connection: ssh
+  vars:
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+  tasks:
+    - name: Install Git and Docker
+      yum:
+        name:
+          - git
+          - docker
+        state: latest
+        update_cache: yes
+      become: yes
+
+    - service:
+        name: docker
+        state: started
+        enabled: yes
+      become: yes
+
+    - name: Start Docker on startup
+      shell: systemctl enable docker
+      become: yes
+        
+    - name: Set access rights to Docker
+      shell: usermod -a -G docker ec2-user
+      become: yes
+
+    - name: Get eShop repo from Git
+      git:
+        repo: 'https://github.com/martinchab/4IT572_semestralka.git'
+        dest: ./app
+        
+    - name: Build eShop Docker
+      shell: cd app && docker build -t myeshop:latest .
+      become: yes
+
+    - name: Run eShop Docker
+      shell: docker run -p 80:3000 myeshop
+      async: 45
+      poll: 0
+      become: yes
+
+    - wait_for:
+        port:
+          80
+
+- name: Terminate Previous EC2 Instance
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+    - name: Find all instances by Tag
+      ec2_instance_info:
+        filters:
+          "tag:Name": "Ansible"
+          "instance-state-name": "running"
+        region: us-east-1
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+        security_token: "{{ session_token }}"
+      register: all_instances
+
+    - name: List & Sort all production Instances 
+      set_fact:
+        instances_list: "{{ all_instances.instances | sort(attribute='launch_time', reverse=true) | map(attribute='instance_id') }}"
+      when: all_instances.instances | length > 0
+
+    - name: Exclude the newly created Instance
+      set_fact:
+        instances_to_terminate: "{{ instances_to_terminate + [item] }}"
+      loop: "{{ instances_list[1:] }}"
+      vars:
+        instances_to_terminate: []
+      when: instances_list | length > 0
+
+    - name: Terminate previous production Instances
+      ec2_instance:
+        state: 'absent'
+        instance_ids: "{{ instances_to_terminate }}"
+        aws_access_key: "{{ access_key }}"
+        aws_secret_key: "{{ secret_key }}"
+        security_token: "{{ session_token }}"
+        region: us-east-1
+      when: instances_to_terminate and instances_to_terminate | length > 0
