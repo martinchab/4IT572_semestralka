@@ -9,10 +9,10 @@
         tags:
           Name: "eShop_production"
           Created: "{{ ansible_date_time.epoch }}"
-        image_id: ami-0230bd60aa48260c6
+        image_id: ami-079db87dc4c10ac91
         region: us-east-1
-        key_name: ansible
-        vpc_subnet_id: subnet-023f54cb0099708a1
+        key_name: semestralka
+        vpc_subnet_id: subnet-0528b1f5dfb3ca1b0
         count: 1
         network:
           assign_public_ip: yes
